@@ -1,60 +1,43 @@
-
 import pandas as pd
+import os
 
-# Function 1 (Copilot-assisted)
+def clean_sales_data():
+    # File paths
+    raw_path = "data/raw/sales_data_raw.csv"
+    processed_path = "data/processed/sales_data_cleaned.csv"
 
-def load_data(file_path: str):
-    try:
-        df = pd.read_csv(file_path)
-        return df
-    except FileNotFoundError:
-        print("Error: File not found.")
-        return None
+    # Load raw data
+    df = pd.read_csv(raw_path)
 
-# Function 2 (Copilot-assisted):
+    # 1 Remove duplicate rows
+    df = df.drop_duplicates()
 
-def clean_column_names(df):
-    df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
-    return df
+    #  Strip extra whitespace from column names
+    df.columns = df.columns.str.strip()
 
-# Strip whitespace from text columns
+    # Strip whitespace in string columns
+    df = df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
 
-def strip_whitespace(df):
-    text_cols = ["prodname", "category"]
+    # Convert date column if it exists
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
-    for col in text_cols:
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
+    # Fill missing numeric values with 0
+    num_cols = df.select_dtypes(include=["number"]).columns
+    df[num_cols] = df[num_cols].fillna(0)
 
-    return df
+    # Fill missing text values with "Unknown"
+    text_cols = df.select_dtypes(include=["object"]).columns
+    df[text_cols] = df[text_cols].fillna("Unknown")
 
-# Handle missing prices and quantities
+    # Make sure processed folder exists
+    os.makedirs("data/processed", exist_ok=True)
 
-def handle_missing_values(df):
-    df = df.dropna(subset=["price", "qty"])
-    return df
+    # Save cleaned data
+    df.to_csv(processed_path, index=False)
 
-# Remove invalid rows (negative price or quantity)
+    print("Data cleaned and saved to:", processed_path)
 
-def remove_invalid_rows(df):
-    df = df[(df["price"] >= 0) & (df["qty"] > 0)]
-    return df
-
-# MAIN EXECUTION BLOCK
 
 if __name__ == "__main__":
-    raw_path = "data/raw/sales_data_raw.csv"
-    cleaned_path = "data/processed/sales_data_clean.csv"
-
-    df_raw = load_data(raw_path)
-
-    if df_raw is not None:
-        df_clean = clean_column_names(df_raw)
-        df_clean = strip_whitespace(df_clean)
-        df_clean = handle_missing_values(df_clean)
-        df_clean = remove_invalid_rows(df_clean)
-
-        df_clean.to_csv(cleaned_path, index=False)
-
-        print("Cleaning complete. First few rows:")
-        print(df_clean.head())
+    clean_sales_data()
