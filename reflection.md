@@ -1,0 +1,1 @@
+During this project I learned data workflow and how to keep everything organized. Making the folders made me see how everything is supposed to be structured. It started out confusing but eventually I understanded it. 
